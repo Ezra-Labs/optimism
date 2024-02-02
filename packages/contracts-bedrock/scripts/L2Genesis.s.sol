@@ -7,6 +7,7 @@ import { console2 as console } from "forge-std/console2.sol";
 import { Artifacts } from "scripts/Artifacts.s.sol";
 import { DeployConfig } from "scripts/DeployConfig.s.sol";
 import { Predeploys } from "src/libraries/Predeploys.sol";
+import { Preinstalls } from "src/libraries/Preinstalls.sol";
 import { L1StandardBridge } from "src/L1/L1StandardBridge.sol";
 import { L1CrossDomainMessenger } from "src/L1/L1CrossDomainMessenger.sol";
 import { L2StandardBridge } from "src/L2/L2StandardBridge.sol";
@@ -166,17 +167,32 @@ contract L2Genesis is Script, Artifacts {
         _setL1Block();
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
+    /// @dev Sets the deployed bytecode for the Preinstalls
+    function _setPreinstalls() internal {
+        _setMulticall3();
+        _setCreate2Deployer();
+        _setSafe_v130();
+        _setSafeL2_v130();
+        _setMultiSendCallOnly_v130();
+        _setSafeSingletonFactory();
+        _setDeterministicDeploymentProxy();
+        _setMultiSend_v130();
+        _setPermit2();
+        _setSenderCreator();
+        _setEntryPoint();
+    }
+
     function _setLegacyMessagePasser() internal {
         _setImplementationCode(Predeploys.LEGACY_MESSAGE_PASSER, "LegacyMessagePasser");
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     function _setDeployerWhitelist() internal {
         _setImplementationCode(Predeploys.DEPLOYER_WHITELIST, "DeployerWhitelist");
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     ///         Contract metadata hash appended to deployed bytecode will differ
     ///         from previous L2 genesis output.
     ///         This contract is NOT proxied.
@@ -209,7 +225,7 @@ contract L2Genesis is Script, Artifacts {
         );
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     ///         We're initializing the implementation with `address(0)` so
     ///         it's not left uninitialized. After `initialize` is called on the
     ///         proxy to set the storage slot with the expected value.
@@ -225,7 +241,7 @@ contract L2Genesis is Script, Artifacts {
         _checkL2StandardBridge(impl);
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     ///         We're initializing the implementation with `address(0)` so
     ///         it's not left uninitialized. After `initialize` is called on the
     ///         proxy to set the storage slot with the expected value.
@@ -241,7 +257,7 @@ contract L2Genesis is Script, Artifacts {
         _checkL2CrossDomainMessenger(impl);
     }
 
-    /// @notice This predeploy is following the saftey invariant #2,
+    /// @notice This predeploy is following the safety invariant #2,
     ///         because the constructor args are non-static L1 contract
     ///         addresses that are being read from the deploy config
     ///         that are set as immutables.
@@ -265,7 +281,7 @@ contract L2Genesis is Script, Artifacts {
         _checkSequencerFeeVault(impl);
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     ///         We're initializing the implementation with `address(0)` so
     ///         it's not left uninitialized. After `initialize` is called on the
     ///         proxy to set the storage slot with the expected value.
@@ -282,19 +298,19 @@ contract L2Genesis is Script, Artifacts {
         _checkOptimismMintableERC20Factory(impl);
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     ///         This contract has no initializer.
     function _setL1BlockNumber() internal {
         _setImplementationCode(Predeploys.L1_BLOCK_NUMBER, "L1BlockNumber");
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     ///         This contract has no initializer.
     function _setGasPriceOracle() internal {
         _setImplementationCode(Predeploys.GAS_PRICE_ORACLE, "GasPriceOracle");
     }
 
-    /// @notice This predeploy is following the saftey invariant #3.
+    /// @notice This predeploy is following the safety invariant #3.
     function _setGovernanceToken() internal {
         if (!cfg.enableGovernance()) {
             console.log("Governance not enabled, skipping setting governanace token");
@@ -318,7 +334,7 @@ contract L2Genesis is Script, Artifacts {
         vm.resetNonce(address(token));
     }
 
-    /// @notice This predeploy is following the saftey invariant #1.
+    /// @notice This predeploy is following the safety invariant #1.
     ///         This contract has no initializer.
     /// @dev Previously the initial L1 attributes was set at genesis, to simplify,
     ///      they no longer are so the resulting storage slots are no longer set.
@@ -326,7 +342,63 @@ contract L2Genesis is Script, Artifacts {
         _setImplementationCode(Predeploys.L1_BLOCK_ATTRIBUTES, "L1Block");
     }
 
-    /// @dev Returns true if the address is not proxied.
+    function _setMulticall3() internal {
+        vm.etch(Preinstalls.MULTICALL3, Preinstalls.MULTICALL3_DEPLOYED_BYTECODE);
+    }
+
+    function _setCreate2Deployer() internal {
+        vm.etch(Preinstalls.CREATE2_DEPLOYER, Preinstalls.CREATE2_DEPLOYER_DEPLOYED_BYTECODE);
+    }
+
+    function _setSafe_v130() internal {
+        vm.etch(Preinstalls.SAFE_V130, Preinstalls.SAFE_V130_DEPLOYED_BYTECODE);
+    }
+
+    function _setSafeL2_v130() internal {
+        vm.etch(Preinstalls.SAFE_L2_V130, Preinstalls.SAFE_L2_V130_DEPLOYED_BYTECODE);
+    }
+
+    function _setMultiSendCallOnly_v130() internal {
+        vm.etch(Preinstalls.MULTI_SEND_CALL_ONLY_V130, Preinstalls.MULTI_SEND_CALL_ONLY_V130_DEPLOYED_BYTECODE);
+    }
+
+    function _setSafeSingletonFactory() internal {
+        vm.etch(Preinstalls.SAFE_SINGLETON_FACTORY, Preinstalls.SAFE_SINGLETON_FACTORY_DEPLOYED_BYTECODE);
+    }
+
+    function _setDeterministicDeploymentProxy() internal {
+        vm.etch(
+            Preinstalls.DETERMINISTIC_DEPLOYMENT_PROXY, Preinstalls.DETERMINISTIC_DEPLOYMENT_PROXY_DEPLOYED_BYTECODE
+        );
+    }
+
+    function _setMultiSend_v130() internal {
+        vm.etch(Preinstalls.MULTI_SEND_V130, Preinstalls.MULTI_SEND_V130_DEPLOYED_BYTECODE);
+    }
+
+    /// @notice This script MUST be invoked with the expected chain id for your L2
+    ///         for the correct deployed bytecode for Permit2 to be resolved
+    ///         e.g. forge script --chain-id 10 ./scripts/L2Genesis.s.sol:L2Genesis.
+    /// @dev Permit2 has an immutable variable that's set to block.chainid, so we're deploying
+    ///      it by calling Preinstalls.DETERMINISTIC_DEPLOYMENT_PROXY with the same CREATE2 salt
+    ///      initialization bytecode used on ETH mainnet.
+    function _setPermit2() internal {
+        (bool success,) = Preinstalls.DETERMINISTIC_DEPLOYMENT_PROXY.call(
+            abi.encodePacked(Preinstalls.PERMIT2_CREATE2_SALT, Preinstalls.PERMIT2_INITIALIZATION_BYTECODE)
+        );
+        require(success, "Failed to deploy Permit2 via Preinstalls.DETERMINISTIC_DEPLOYMENT_PROXY");
+        require(Preinstalls.PERMIT2.code.length > 0, "Expected deployed bytecode at Preinstalls.PERMIT2");
+    }
+
+    function _setSenderCreator() internal {
+        vm.etch(Preinstalls.SENDER_CREATOR, Preinstalls.SENDER_CREATOR_DEPLOYED_BYTECODE);
+    }
+
+    function _setEntryPoint() internal {
+        vm.etch(Preinstalls.ENTRY_POINT, Preinstalls.ENTRY_POINT_DEPLOYED_BYTECODE);
+    }
+
+    /// @dev Returns true if the adress is not proxied.
     function _notProxied(address _addr) internal pure returns (bool) {
         return _addr == Predeploys.GOVERNANCE_TOKEN || _addr == Predeploys.WETH9;
     }
