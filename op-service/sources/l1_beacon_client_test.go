@@ -1,11 +1,16 @@
 package sources
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/ethereum-optimism/optimism/op-service/eth"
+	"github.com/ethereum-optimism/optimism/op-service/sources/mocks"
+	"github.com/ethereum-optimism/optimism/op-service/testlog"
 	"github.com/ethereum/go-ethereum/crypto/kzg4844"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slog"
 )
 
 func makeTestBlobSidecar(index uint64) (eth.IndexedBlobHash, *eth.BlobSidecar) {
@@ -87,4 +92,27 @@ func TestBlobsFromSidecars_EmptySidecarList(t *testing.T) {
 	blobs, err := blobsFromSidecars(sidecars, hashes)
 	require.NoError(t, err)
 	require.Empty(t, blobs, "blobs should be empty when no sidecars are provided")
+}
+
+func TestFallbackClient(t *testing.T) {
+	ctx := context.Background()
+	a := mocks.NewBeaconClient(t)
+	b := mocks.NewBeaconClient(t)
+	cl := FallbackBeaconClient{primary: a, secondary: b, l: testlog.Logger(t, slog.LevelError)}
+
+	// Test that it goes to the primary
+	version := "mock 1.2.3"
+	a.EXPECT().NodeVersion(ctx).Once().Return(version, nil)
+	out, err := cl.NodeVersion(ctx)
+	require.Equal(t, version, out)
+	require.NoError(t, err)
+
+	// Test that if falls back on error
+	versionb := "mock archiver 2.3.4"
+	a.EXPECT().NodeVersion(ctx).Once().Return("", errors.New("timeout"))
+	b.EXPECT().NodeVersion(ctx).Once().Return(versionb, nil)
+	out, err = cl.NodeVersion(ctx)
+	require.Equal(t, versionb, out)
+	require.NoError(t, err)
+
 }
