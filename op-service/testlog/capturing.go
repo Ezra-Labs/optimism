@@ -75,6 +75,16 @@ func (c *CapturingHandler) FindLogsWithLevel(lvl slog.Level) []*HelperRecord {
 	return logs
 }
 
+func (c *CapturingHandler) FindLogsWithLevelAndMessage(lvl slog.Level, msg string) []*HelperRecord {
+	var logs []*HelperRecord
+	for _, record := range *c.Logs {
+		if record.Level == lvl && record.Message == msg {
+			logs = append(logs, &HelperRecord{record})
+		}
+	}
+	return logs
+}
+
 func (c *CapturingHandler) FindLogContaining(msg string) (*HelperRecord, bool) {
 	for _, record := range *c.Logs {
 		if strings.Contains(record.Message, msg) {
